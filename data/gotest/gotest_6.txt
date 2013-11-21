@@ -1,0 +1,7 @@
+=== RUN TestPackage_2
+--- FAIL: TestPackage_2 (0.00 seconds)
+	package_1_test.go:10: Some error message,
+		Some error message in new line
+FAIL
+exit status 1
+FAIL	go.junitxml/package_1	0.006s

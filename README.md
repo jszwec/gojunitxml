@@ -9,9 +9,9 @@ Installation
     go get github.com/jszwec/gojunitxml
 
 Requirements
-============
+------------
 
-    Go v1.1 or higher
+Go v1.1 or higher
 
 Usage
 -----

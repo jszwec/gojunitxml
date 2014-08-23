@@ -8,31 +8,32 @@ import (
 	"strings"
 )
 
-type PARSING_STATE int8
+type ParserState int8
 
 const (
-	PARSING_NEXT_STEP = iota
-	PARSING_TEST_CASE_RESULT
-	PARSING_TEST_CASE_MESSAGE
-	PARSING_TEST_SUIT_SUMMARY
-	FAIL
+	ParserNextStep = iota
+	ParserTestCaseResult
+	ParserTestCaseMessage
+	ParserTestSuitSummary
+	ParserFail
 )
 
 const (
-	MSG_PARSING_ERROR   = "Error while parsing at line : %s"
-	MSG_FAILURE_TYPE    = "gotest.error"
-	MSG_FAILURE_MESSAGE = "error"
-	MSG_SKIPPED_TYPE    = "gotest.skipped"
-	MSG_SKIPPED_MESSAGE = "skipped"
+	MsgFailureType    = "gotest.error"
+	MsgFailureMessage = "error"
+	MsgSkippedType    = "gotest.skipped"
+	MsgSkippedMessage = "skipped"
 )
+
+var ErrParserError = func(err string) error { return fmt.Errorf("Error while parsing at line : %s", err) }
 
 var (
-	testCaseRegex         = regexp.MustCompile(`^===\sRUN\s(?:[A-Za-z0-9_-]+)\z`)
-	resultCaseRegex       = regexp.MustCompile(`^---\s(PASS|FAIL|SKIP):\s([A-Za-z0-9_-]+)\s\((\d+\.\d{2})\sseconds\)\z`)
-	testSuitResultRegex   = regexp.MustCompile(`^(PASS|FAIL)\z`)
-	testSuiteSummaryRegex = regexp.MustCompile(`^(?:ok|FAIL|\?)\s+([A-Za-z0-9_\-/\\\.]+)\s+(?:(?:\d+\.\d+s)|(?:\[no\stest\sfiles\]))\z`)
-	emptySuitRegex        = regexp.MustCompile(`^?\s+([A-Za-z0-9_\-/\\\.]+)\s+\[no\stest\sfiles\]\z`)
-	exitstatusRegex       = regexp.MustCompile(`^exit\s+status\s+\d+\z`)
+	RgxTestCase         = regexp.MustCompile(`^===\sRUN\s(?:[A-Za-z0-9_-]+)\z`)
+	RgxResultCase       = regexp.MustCompile(`^---\s(PASS|FAIL|SKIP):\s([A-Za-z0-9_-]+)\s\((\d+\.\d{2})\sseconds\)\z`)
+	RgxSuiteResult      = regexp.MustCompile(`^(PASS|FAIL)\z`)
+	RgxTestSuiteSummary = regexp.MustCompile(`^(?:ok|FAIL|\?)\s+([A-Za-z0-9_\-/\\\.]+)\s+(?:(?:\d+\.\d+s)|(?:\[no\stest\sfiles\]))\z`)
+	RgxEmptySuite       = regexp.MustCompile(`^?\s+([A-Za-z0-9_\-/\\\.]+)\s+\[no\stest\sfiles\]\z`)
+	RgxExitStatus       = regexp.MustCompile(`^exit\s+status\s+\d+\z`)
 )
 
 /*
@@ -62,55 +63,57 @@ var (
 
 func parseGoTest(reader io.Reader) (JUnitTestResult, error) {
 	var (
-		testResult JUnitTestResult = JUnitTestResult{XMLName: xmlName(TAG_TESTSUITES)}
-		testSuit   JUnitSuit       = JUnitSuit{XMLName: xmlName(TAG_TESTSUITE)}
-		state      PARSING_STATE   = PARSING_NEXT_STEP
+		testResult JUnitTestResult = JUnitTestResult{XMLName: xmlName(TagTestSuites)}
+		testSuit   JUnitSuit       = JUnitSuit{XMLName: xmlName(TagTestSuite)}
+		state      ParserState     = ParserNextStep
 	)
 
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		if state = parseLine(scanner.Text(), state, &testSuit, &testResult); state == FAIL {
-			return JUnitTestResult{}, fmt.Errorf(MSG_PARSING_ERROR, scanner.Text())
+		if state = parseLine(scanner.Text(), state, &testSuit, &testResult); state == ParserFail {
+			return JUnitTestResult{}, ErrParserError(scanner.Text())
 		}
 	}
 	return testResult, nil
 }
 
-func parseLine(line string, state PARSING_STATE, testSuit *JUnitSuit, testResult *JUnitTestResult) PARSING_STATE {
+func parseLine(line string, state ParserState, testSuit *JUnitSuit, testResult *JUnitTestResult) ParserState {
 	switch state {
-	case PARSING_NEXT_STEP:
+	case ParserNextStep:
 		return parseNextStep(line, testSuit, testResult)
-	case PARSING_TEST_CASE_RESULT:
+	case ParserTestCaseResult:
 		return parseTestCaseResult(line, testSuit)
-	case PARSING_TEST_CASE_MESSAGE:
+	case ParserTestCaseMessage:
 		return parseTestCaseMessage(line, testSuit)
-	case PARSING_TEST_SUIT_SUMMARY:
+	case ParserTestSuitSummary:
 		return parseTestSuiteSummary(line, testSuit, testResult)
 	default:
-		return FAIL
+		return ParserFail
 	}
 }
 
-func parseNextStep(line string, testSuit *JUnitSuit, testResult *JUnitTestResult) PARSING_STATE {
-	if testCaseRegex.MatchString(line) {
-		return PARSING_TEST_CASE_RESULT
-	} else if testSuitResultRegex.MatchString(line) {
-		return PARSING_TEST_SUIT_SUMMARY
-	} else if emptySuitRegex.MatchString(line) {
+func parseNextStep(line string, testSuit *JUnitSuit, testResult *JUnitTestResult) ParserState {
+	switch {
+	case RgxTestCase.MatchString(line):
+		return ParserTestCaseResult
+	case RgxSuiteResult.MatchString(line):
+		return ParserTestSuitSummary
+	case RgxEmptySuite.MatchString(line):
 		return parseTestSuiteSummary(line, testSuit, testResult)
+	default:
+		return ParserFail
 	}
-	return FAIL
 }
 
-func parseTestCaseResult(line string, testSuit *JUnitSuit) PARSING_STATE {
+func parseTestCaseResult(line string, testSuit *JUnitSuit) ParserState {
 	var (
-		match    []string       = resultCaseRegex.FindStringSubmatch(line)
-		testCase *JUnitTestCase = &JUnitTestCase{XMLName: xmlName(TAG_TESTCASE)}
-		state    PARSING_STATE  = PARSING_NEXT_STEP
+		match    []string       = RgxResultCase.FindStringSubmatch(line)
+		testCase *JUnitTestCase = &JUnitTestCase{XMLName: xmlName(TagTestCase)}
+		state    ParserState    = ParserNextStep
 	)
 
 	if match == nil {
-		return FAIL
+		return ParserFail
 	}
 
 	testCase.Name = match[2]
@@ -120,12 +123,12 @@ func parseTestCaseResult(line string, testSuit *JUnitSuit) PARSING_STATE {
 	switch match[1] {
 	case "FAIL":
 		testSuit.Failures += 1
-		testCase.Message = &JUnitTestCaseMessage{XMLName: xmlName(TAG_FAILURE), Message: MSG_FAILURE_MESSAGE, Type: MSG_FAILURE_TYPE}
-		state = PARSING_TEST_CASE_MESSAGE
+		testCase.Message = &JUnitTestCaseMessage{XMLName: xmlName(TagFailure), Message: MsgFailureMessage, Type: MsgFailureType}
+		state = ParserTestCaseMessage
 	case "SKIP":
 		testSuit.Skip += 1
-		testCase.Message = &JUnitTestCaseMessage{XMLName: xmlName(TAG_SKIPPED), Message: MSG_SKIPPED_MESSAGE, Type: MSG_SKIPPED_TYPE}
-		state = PARSING_TEST_CASE_MESSAGE
+		testCase.Message = &JUnitTestCaseMessage{XMLName: xmlName(TagSkipped), Message: MsgSkippedMessage, Type: MsgSkippedType}
+		state = ParserTestCaseMessage
 	default:
 		break
 	}
@@ -134,27 +137,26 @@ func parseTestCaseResult(line string, testSuit *JUnitSuit) PARSING_STATE {
 	return state
 }
 
-func parseTestCaseMessage(line string, testSuit *JUnitSuit) PARSING_STATE {
-	if testCaseRegex.MatchString(line) {
-		return PARSING_TEST_CASE_RESULT
+func parseTestCaseMessage(line string, testSuit *JUnitSuit) ParserState {
+	if RgxTestCase.MatchString(line) {
+		return ParserTestCaseResult
 	}
-	if testSuitResultRegex.MatchString(line) {
-		return PARSING_TEST_SUIT_SUMMARY
+	if RgxSuiteResult.MatchString(line) {
+		return ParserTestSuitSummary
 	}
 
 	testSuit.TestCases[len(testSuit.TestCases)-1].Message.Content += strings.Trim(line, " \t") + ";"
-
-	return PARSING_TEST_CASE_MESSAGE
+	return ParserTestCaseMessage
 }
 
-func parseTestSuiteSummary(line string, testSuit *JUnitSuit, testResult *JUnitTestResult) PARSING_STATE {
-	if exitstatusRegex.MatchString(line) {
-		return PARSING_TEST_SUIT_SUMMARY
+func parseTestSuiteSummary(line string, testSuit *JUnitSuit, testResult *JUnitTestResult) ParserState {
+	if RgxExitStatus.MatchString(line) {
+		return ParserTestSuitSummary
 	}
-	var match []string = testSuiteSummaryRegex.FindStringSubmatch(line)
+	var match []string = RgxTestSuiteSummary.FindStringSubmatch(line)
 
 	if match == nil {
-		return FAIL
+		return ParserFail
 	}
 
 	testSuit.Name = match[1]
@@ -162,6 +164,6 @@ func parseTestSuiteSummary(line string, testSuit *JUnitSuit, testResult *JUnitTe
 	for i := range testSuit.TestCases {
 		testSuit.TestCases[i].ClassName = match[1]
 	}
-	*testSuit = JUnitSuit{XMLName: xmlName(TAG_TESTSUITE)}
-	return PARSING_NEXT_STEP
+	*testSuit = JUnitSuit{XMLName: xmlName(TagTestSuite)}
+	return ParserNextStep
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"encoding/xml"
-	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -306,28 +305,22 @@ func Test_GoTestParser_3(t *testing.T) {
 }
 
 func Test_GoTestParser_4(t *testing.T) {
+	expected := ErrParserError("=== RUN Test$Package_1")
 	input := openTestFile(gotestDir("gotest_4.txt"), t)
 	defer input.Close()
 
-	_, err := parseGoTest(input)
-	if err == nil {
-		t.Fatal("expected parser to fail")
-	}
-	if err.Error() != fmt.Sprintf(MSG_PARSING_ERROR, "=== RUN Test$Package_1") {
-		t.Errorf("expected error to contain %s", fmt.Sprintf(MSG_PARSING_ERROR, "=== RUN Test$Package_1"))
+	if _, err := parseGoTest(input); !reflect.DeepEqual(err, expected) {
+		t.Errorf("expected err=%v, got %v", expected, err)
 	}
 }
 
 func Test_GoTestParser_5(t *testing.T) {
+	expected := ErrParserError("ok  	gojunitxml/pac&kage_2	0.006s")
 	input := openTestFile(gotestDir("gotest_5.txt"), t)
 	defer input.Close()
 
-	_, err := parseGoTest(input)
-	if err == nil {
-		t.Fatal("expected parser to fail")
-	}
-	if err.Error() != fmt.Sprintf(MSG_PARSING_ERROR, "ok  	gojunitxml/pac&kage_2	0.006s") {
-		t.Errorf("expected error to contain %s", fmt.Sprintf(MSG_PARSING_ERROR, "ok  	gojunitxml/pac&kage_2	0.006s"))
+	if _, err := parseGoTest(input); !reflect.DeepEqual(err, expected) {
+		t.Errorf("expected err=%v, got %v", expected, err)
 	}
 }
 

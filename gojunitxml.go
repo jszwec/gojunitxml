@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 	"os"
 )
 
@@ -27,23 +27,21 @@ func main() {
 
 	if outputfile == "" {
 		flag.PrintDefaults()
-		return
+		os.Exit(1)
 	}
 
 	if inputfile != "" {
 		if input, err = os.Open(inputfile); err != nil {
-			fmt.Println(err)
-			return
+			log.Fatal(err)
 		}
 		defer input.Close()
 	}
 
 	results, err := parseGoTest(input)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
 	if err = writeToXML(results, outputfile); err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }

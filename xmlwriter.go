@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	TAG_TESTSUITES = "testsuites"
-	TAG_TESTSUITE  = "testsuite"
-	TAG_TESTCASE   = "testcase"
-	TAG_FAILURE    = "failure"
-	TAG_SKIPPED    = "skipped"
+	TagTestSuites = "testsuites"
+	TagTestSuite  = "testsuite"
+	TagTestCase   = "testcase"
+	TagFailure    = "failure"
+	TagSkipped    = "skipped"
 )
 
 type JUnitTestCaseMessage struct {
@@ -48,10 +48,7 @@ func writeToXML(result JUnitTestResult, filename string) error {
 	if err != nil {
 		return err
 	}
-	if err := ioutil.WriteFile(filename, append([]byte(xml.Header), output...), 0755); err != nil {
-		return err
-	}
-	return nil
+	return ioutil.WriteFile(filename, append([]byte(xml.Header), output...), 0755)
 }
 
 func xmlName(name string) xml.Name {

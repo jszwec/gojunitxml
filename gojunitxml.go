@@ -41,7 +41,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err = writeToXML(results, outputfile); err != nil {
+	if err = results.WriteToXML(outputfile); err != nil {
 		log.Fatal(err)
 	}
 }

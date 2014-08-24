@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	TagTestSuites = "testsuites"
-	TagTestSuite  = "testsuite"
-	TagTestCase   = "testcase"
-	TagFailure    = "failure"
-	TagSkipped    = "skipped"
+	tagTestSuites = "testsuites"
+	tagTestSuite  = "testsuite"
+	tagTestCase   = "testcase"
+	tagFailure    = "failure"
+	tagSkipped    = "skipped"
 )
 
 type JUnitTestCaseMessage struct {
@@ -28,7 +28,7 @@ type JUnitTestCase struct {
 	Message   *JUnitTestCaseMessage `xml:",any"`
 }
 
-type JUnitSuit struct {
+type JUnitSuite struct {
 	XMLName   xml.Name        `xml:"testsuite"`
 	Name      string          `xml:"name,attr"`
 	Tests     int             `xml:"tests,attr"`
@@ -39,18 +39,39 @@ type JUnitSuit struct {
 }
 
 type JUnitTestResult struct {
-	XMLName xml.Name    `xml:"testsuites"`
-	Suites  []JUnitSuit `xml:"testsuite"`
+	XMLName xml.Name     `xml:"testsuites"`
+	Suites  []JUnitSuite `xml:"testsuite"`
 }
 
-func writeToXML(result JUnitTestResult, filename string) error {
-	output, err := xml.MarshalIndent(result, "  ", "    ")
+func newJUnitTestResult(tag string) *JUnitTestResult {
+	return &JUnitTestResult{XMLName: xml.Name{Local: tag}}
+}
+
+func newJUnitSuite(tag string) *JUnitSuite {
+	return &JUnitSuite{XMLName: xml.Name{Local: tag}}
+}
+
+func newJUnitTestCaseMessage(tag, message, typ string) *JUnitTestCaseMessage {
+	return &JUnitTestCaseMessage{
+		XMLName: xml.Name{Local: tag},
+		Message: message,
+		Type:    typ,
+	}
+}
+
+func newJUnitTestCase(tag, name, time string, message *JUnitTestCaseMessage) *JUnitTestCase {
+	return &JUnitTestCase{
+		XMLName: xml.Name{Local: tag},
+		Name:    name,
+		Time:    time,
+		Message: message,
+	}
+}
+
+func (r *JUnitTestResult) WriteToXML(filename string) error {
+	output, err := xml.MarshalIndent(r, "  ", "    ")
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(filename, append([]byte(xml.Header), output...), 0755)
-}
-
-func xmlName(name string) xml.Name {
-	return xml.Name{Local: name}
 }

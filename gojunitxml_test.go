@@ -71,13 +71,13 @@ func Test_XMLWriter_1(t *testing.T) {
 		result     JUnitTestResult = JUnitTestResult{}
 	)
 
-	result.Suites = append(result.Suites, JUnitSuit{Name: "TestPackage", Tests: 10,
+	result.Suites = append(result.Suites, JUnitSuite{Name: "TestPackage", Tests: 10,
 		TestCases: []JUnitTestCase{JUnitTestCase{
 			ClassName: "TestPackage",
 			Name:      "TestCase1",
 			Time:      "2.00"}}})
 
-	if err := writeToXML(result, outputfile); err != nil {
+	if err := result.WriteToXML(outputfile); err != nil {
 		t.Fatal("expected to write XML file, ", err)
 	}
 	defer os.Remove(outputfile)
@@ -101,7 +101,7 @@ func Test_XMLWriter_2(t *testing.T) {
 	)
 
 	result.Suites = append(result.Suites,
-		JUnitSuit{Name: "TestPackage", Tests: 10,
+		JUnitSuite{Name: "TestPackage", Tests: 10,
 			TestCases: []JUnitTestCase{JUnitTestCase{
 				ClassName: "TestPackage",
 				Name:      "TestCase1",
@@ -112,7 +112,7 @@ func Test_XMLWriter_2(t *testing.T) {
 					Type:    "type",
 					Content: "Content"}}}})
 
-	if err := writeToXML(result, outputfile); err != nil {
+	if err := result.WriteToXML(outputfile); err != nil {
 		t.Fatal("expected to write XML file, ", err)
 	}
 	defer os.Remove(outputfile)
@@ -138,7 +138,7 @@ func Test_XMLWriter_3(t *testing.T) {
 	)
 
 	result.Suites = append(result.Suites,
-		JUnitSuit{Name: "TestPackage", Tests: 10, Errors: 3, Failures: 2, Skip: 4,
+		JUnitSuite{Name: "TestPackage", Tests: 10, Errors: 3, Failures: 2, Skip: 4,
 			TestCases: []JUnitTestCase{JUnitTestCase{
 				ClassName: "TestPackage",
 				Name:      "TestCase1",
@@ -153,7 +153,7 @@ func Test_XMLWriter_3(t *testing.T) {
 						Type:    "type",
 						Content: "Content"}}}})
 
-	if err := writeToXML(result, outputfile); err != nil {
+	if err := result.WriteToXML(outputfile); err != nil {
 		t.Fatal("expected to write XML file, ", err)
 	}
 	defer os.Remove(outputfile)
@@ -179,9 +179,9 @@ func Test_XMLWriter_4(t *testing.T) {
 		result     JUnitTestResult = JUnitTestResult{}
 	)
 
-	result.Suites = append(result.Suites, JUnitSuit{Name: "TestPackage1"})
+	result.Suites = append(result.Suites, JUnitSuite{Name: "TestPackage1"})
 	result.Suites = append(result.Suites,
-		JUnitSuit{Name: "TestPackage2", Tests: 10, Errors: 3, Failures: 2, Skip: 4,
+		JUnitSuite{Name: "TestPackage2", Tests: 10, Errors: 3, Failures: 2, Skip: 4,
 			TestCases: []JUnitTestCase{JUnitTestCase{
 				ClassName: "TestPackage",
 				Name:      "TestCase1",
@@ -196,7 +196,7 @@ func Test_XMLWriter_4(t *testing.T) {
 						Type:    "type",
 						Content: "Content"}}}})
 
-	if err := writeToXML(result, outputfile); err != nil {
+	if err := result.WriteToXML(outputfile); err != nil {
 		t.Fatal("expected to write XML file, ", err)
 	}
 	defer os.Remove(outputfile)
@@ -237,7 +237,7 @@ func Test_GoTestParser_1(t *testing.T) {
 		  </testsuite>
     </testsuites>
     `
-	checkTestResult([]byte(data), result, t)
+	checkTestResult([]byte(data), *result, t)
 }
 
 func Test_GoTestParser_2(t *testing.T) {
@@ -269,7 +269,7 @@ func Test_GoTestParser_2(t *testing.T) {
 		  </testsuite>
     </testsuites>
     `
-	checkTestResult([]byte(data), result, t)
+	checkTestResult([]byte(data), *result, t)
 }
 
 func Test_GoTestParser_3(t *testing.T) {
@@ -301,11 +301,11 @@ func Test_GoTestParser_3(t *testing.T) {
 		  <testsuite name="gojunitxml/package_5" tests="0" errors="0" failures="0" skip="0"></testsuite>
     </testsuites>
     `
-	checkTestResult([]byte(data), result, t)
+	checkTestResult([]byte(data), *result, t)
 }
 
 func Test_GoTestParser_4(t *testing.T) {
-	expected := ErrParserError("=== RUN Test$Package_1")
+	expected := errParserError("=== RUN Test$Package_1")
 	input := openTestFile(gotestDir("gotest_4.txt"), t)
 	defer input.Close()
 
@@ -315,7 +315,7 @@ func Test_GoTestParser_4(t *testing.T) {
 }
 
 func Test_GoTestParser_5(t *testing.T) {
-	expected := ErrParserError("ok  	gojunitxml/pac&kage_2	0.006s")
+	expected := errParserError("ok  	gojunitxml/pac&kage_2	0.006s")
 	input := openTestFile(gotestDir("gotest_5.txt"), t)
 	defer input.Close()
 
@@ -342,7 +342,7 @@ func Test_GoTestParser_6(t *testing.T) {
 		  </testsuite>
     </testsuites>
     `
-	checkTestResult([]byte(data), result, t)
+	checkTestResult([]byte(data), *result, t)
 }
 
 func Test_GoTestParser_7(t *testing.T) {
@@ -364,5 +364,5 @@ func Test_GoTestParser_7(t *testing.T) {
 		  </testsuite>
     </testsuites>
     `
-	checkTestResult([]byte(data), result, t)
+	checkTestResult([]byte(data), *result, t)
 }

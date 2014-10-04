@@ -1,3 +1,0 @@
-=== RUN Test$Package_1
---- PASS: Test$Package_1 (0.00 seconds)
-PASS

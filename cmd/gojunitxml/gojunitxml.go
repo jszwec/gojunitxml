@@ -2,8 +2,11 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
+
+	"github.com/jszwec/gojunitxml"
 )
 
 var inputfile, outputfile string
@@ -29,7 +32,6 @@ func main() {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-
 	if inputfile != "" {
 		if input, err = os.Open(inputfile); err != nil {
 			log.Fatal(err)
@@ -37,11 +39,11 @@ func main() {
 		defer input.Close()
 	}
 
-	results, err := parseGoTest(input)
+	out, err := gojunitxml.Parse(input).Marshal()
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err = results.WriteToXML(outputfile); err != nil {
+	if err := ioutil.WriteFile(outputfile, out, 0755); err != nil {
 		log.Fatal(err)
 	}
 }

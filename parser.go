@@ -7,13 +7,6 @@ import (
 	"strings"
 )
 
-const (
-	msgFailureType    = "gotest.error"
-	msgFailureMessage = "error"
-	msgSkippedType    = "gotest.skipped"
-	msgSkippedMessage = "skipped"
-)
-
 var (
 	reTestCase    = regexp.MustCompile(`^===\sRUN\s([A-Za-z0-9_-]+)\z`)
 	reResultCase  = regexp.MustCompile(`^---\s(PASS|FAIL|SKIP):\s([A-Za-z0-9_-]+)\s\((\d+\.\d{2})\sseconds\)\z`)

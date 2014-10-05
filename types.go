@@ -11,6 +11,13 @@ const (
 	unknown
 )
 
+const (
+	msgFailureType    = "gotest.error"
+	msgFailureMessage = "error"
+	msgSkippedType    = "gotest.skipped"
+	msgSkippedMessage = "skipped"
+)
+
 type message struct {
 	XMLName xml.Name
 	Type    string `xml:"type,attr"`

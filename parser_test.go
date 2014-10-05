@@ -49,7 +49,7 @@ func TestParser(t *testing.T) {
 			=== RUN TestPackage_1
 			--- PASS: TestPackage_1 (0.00 seconds)
 			=== RUN TestPackage_2
-			--- FAIL: TestPackage_2 (0.00 seconds)
+			--- SKIP: TestPackage_2 (0.00 seconds)
 				package_1_test.go:9: Some error message
 			=== RUN TestPackage_3
 			--- FAIL: TestPackage_3 (0.00 seconds)
@@ -66,10 +66,10 @@ func TestParser(t *testing.T) {
 			?   	gojunitxml/package_5	[no test files]`),
 			xml: xml.Header + `<testsuites>
 				<testsuite name="gojunitxml/package_6.package_6" tests="0" errors="0" failures="0" skip="0"></testsuite>
-				<testsuite name="gojunitxml/package_1.package_1" tests="3" errors="0" failures="2" skip="0">
+				<testsuite name="gojunitxml/package_1.package_1" tests="3" errors="0" failures="1" skip="1">
 					<testcase classname="gojunitxml/package_1.package_1" name="TestPackage_1" time="0.00"></testcase>
 					<testcase classname="gojunitxml/package_1.package_1" name="TestPackage_2" time="0.00">
-								<failure type="gotest.error" message="error">package_1_test.go:9: Some error message</failure>
+								<skipped type="gotest.skipped" message="skipped">package_1_test.go:9: Some error message</skipped>
 					</testcase>
 					<testcase classname="gojunitxml/package_1.package_1" name="TestPackage_3" time="0.00">
 						<failure type="gotest.error" message="error">package_1_test.go:13: Some error message,</failure>

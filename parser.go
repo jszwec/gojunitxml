@@ -26,34 +26,17 @@ func newparser() *parser {
 	}
 }
 
-func result(s string) caseresult {
-	switch s {
-	case "PASS":
-		return passed
-	case "FAIL":
-		return failed
-	case "SKIP":
-		return skipped
-	default:
-		return unknown
-	}
-}
-
 func (p *parser) addtestcase(m []string) {
 	p.tcs = append(p.tcs, testcase{
 		Name:   m[2],
 		Time:   m[3],
-		result: result(m[1])})
+		result: resultString(m[1]),
+	})
 }
 
 func (p *parser) addmessage(t *testcase, line string) {
-	switch t.result {
-	case failed:
-		t.Messages = append(t.Messages, errorMessage(line))
-	case skipped:
-		t.Messages = append(t.Messages, skipMessage(line))
-	default:
-		break
+	if m := newMessageResult(line, t.result); m != nil {
+		t.Messages = append(t.Messages, m)
 	}
 }
 
@@ -61,8 +44,7 @@ func (p *parser) addtestsuite(m []string) {
 	suite := testsuite{
 		Name: func(s string) (n string) {
 			n = strings.Replace(m[1], ".", "_", -1)
-			i := strings.LastIndex(m[1], "/")
-			if i > -1 && i < len(n)-1 {
+			if i := strings.LastIndex(m[1], "/"); i > -1 && i < len(n)-1 {
 				n += "." + n[i+1:]
 			} else {
 				n += "." + n

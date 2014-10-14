@@ -2,18 +2,20 @@ package gojunitxml
 
 import "encoding/xml"
 
-type caseresult uint8
+type result uint8
 
 const (
-	passed caseresult = iota
+	passed result = iota
 	failed
 	skipped
 	unknown
 )
 
 const (
+	msgFailure        = "failure"
 	msgFailureType    = "gotest.error"
 	msgFailureMessage = "error"
+	msgSkipped        = "skipped"
 	msgSkippedType    = "gotest.skipped"
 	msgSkippedMessage = "skipped"
 )
@@ -26,11 +28,11 @@ type message struct {
 }
 
 type testcase struct {
-	ClassName string    `xml:"classname,attr"`
-	Name      string    `xml:"name,attr"`
-	Time      string    `xml:"time,attr"`
-	Messages  []message `xml:",any"`
-	result    caseresult
+	ClassName string     `xml:"classname,attr"`
+	Name      string     `xml:"name,attr"`
+	Time      string     `xml:"time,attr"`
+	Messages  []*message `xml:",any"`
+	result    result
 }
 
 type testsuite struct {
@@ -54,20 +56,35 @@ func (t testsuites) Marshal() ([]byte, error) {
 	return append([]byte(xml.Header), b...), nil
 }
 
-func errorMessage(content string) message {
-	return message{
-		XMLName: xml.Name{Local: "failure"},
-		Message: msgFailureMessage,
-		Type:    msgFailureType,
-		Content: content,
+func newMessageResult(cnt string, res result) *message {
+	switch res {
+	case failed:
+		return newMessage(msgFailure, msgFailureMessage, msgFailureType, cnt)
+	case skipped:
+		return newMessage(msgSkipped, msgSkippedMessage, msgSkippedType, cnt)
+	default:
+		return nil
 	}
 }
 
-func skipMessage(content string) message {
-	return message{
-		XMLName: xml.Name{Local: "skipped"},
-		Message: msgSkippedMessage,
-		Type:    msgSkippedType,
-		Content: content,
+func newMessage(tag, msg, typ, cnt string) *message {
+	return &message{
+		XMLName: xml.Name{Local: tag},
+		Message: msg,
+		Type:    typ,
+		Content: cnt,
+	}
+}
+
+func resultString(s string) result {
+	switch s {
+	case "PASS":
+		return passed
+	case "FAIL":
+		return failed
+	case "SKIP":
+		return skipped
+	default:
+		return unknown
 	}
 }

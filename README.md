@@ -6,7 +6,7 @@ gojunitxml
 Installation
 ------------
 
-    go get github.com/jszwec/gojunitxml
+    go get github.com/jszwec/gojunitxml/cmd/gojunitxml
 
 Usage
 -----

@@ -20,6 +20,12 @@ const (
 	msgSkippedMessage = "skipped"
 )
 
+var resmap = map[string]result{
+	"PASS": passed,
+	"FAIL": failed,
+	"SKIP": skipped,
+}
+
 type message struct {
 	XMLName xml.Name
 	Type    string `xml:"type,attr"`
@@ -48,23 +54,21 @@ type testsuites struct {
 	Suites []testsuite `xml:"testsuite"`
 }
 
-func (t testsuites) Marshal() ([]byte, error) {
-	b, err := xml.MarshalIndent(t, "  ", "    ")
-	if err != nil {
-		return nil, err
+func (t testsuites) Marshal() (b []byte, err error) {
+	if b, err = xml.MarshalIndent(t, "  ", "    "); err == nil {
+		b = append([]byte(xml.Header), b...)
 	}
-	return append([]byte(xml.Header), b...), nil
+	return
 }
 
-func newMessageResult(cnt string, res result) *message {
+func newMessageResult(cnt string, res result) (m *message) {
 	switch res {
 	case failed:
-		return newMessage(msgFailure, msgFailureMessage, msgFailureType, cnt)
+		m = newMessage(msgFailure, msgFailureMessage, msgFailureType, cnt)
 	case skipped:
-		return newMessage(msgSkipped, msgSkippedMessage, msgSkippedType, cnt)
-	default:
-		return nil
+		m = newMessage(msgSkipped, msgSkippedMessage, msgSkippedType, cnt)
 	}
+	return
 }
 
 func newMessage(tag, msg, typ, cnt string) *message {
@@ -77,14 +81,8 @@ func newMessage(tag, msg, typ, cnt string) *message {
 }
 
 func resultString(s string) result {
-	switch s {
-	case "PASS":
-		return passed
-	case "FAIL":
-		return failed
-	case "SKIP":
-		return skipped
-	default:
-		return unknown
+	if r, ok := resmap[s]; ok {
+		return r
 	}
+	return unknown
 }

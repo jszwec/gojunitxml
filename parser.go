@@ -42,14 +42,18 @@ func (p *parser) addmessage(t *testcase, line string) {
 
 func (p *parser) addtestsuite(m []string) {
 	suite := testsuite{
-		Name: func(s string) (n string) {
-			n = strings.Replace(m[1], ".", "_", -1)
+		// testsuite's name will be slightly changed e.g.
+		// github.com/jszwec/gojunitxml -> github_com/jszwec/gojunitxml.gojunitxml
+		//
+		// This is for Jenkins UI
+		//   Package = github_com/jszwec/gojunitxml
+		//   Class   = gojunitxml
+		Name: func(s string) string {
+			n := strings.Replace(m[1], ".", "_", -1)
 			if i := strings.LastIndex(m[1], "/"); i > -1 && i < len(n)-1 {
-				n += "." + n[i+1:]
-			} else {
-				n += "." + n
+				return n + "." + n[i+1:]
 			}
-			return
+			return n + "." + n
 		}(m[1]),
 		Tests: len(p.tcs),
 	}
